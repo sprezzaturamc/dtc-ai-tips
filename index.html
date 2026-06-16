@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Tips</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="banner" class="banner" hidden></div>
+
+  <!-- login gate -->
+  <div id="login" class="login" hidden>
+    <div class="login-card">
+      <h1>AI Tips</h1>
+      <p class="login-sub">A private library of prompting techniques for the DTC program. Sign in with your work email and we'll send a one-time link.</p>
+      <form id="login-form">
+        <input id="email" type="email" placeholder="you@sprezz.com" required autocomplete="email">
+        <button class="btn primary" type="submit">Send magic link</button>
+      </form>
+      <p id="login-msg" class="login-msg"></p>
+    </div>
+  </div>
+
+  <!-- app shell -->
+  <div id="app" class="app" hidden>
+    <aside class="sidebar">
+      <div class="brand" data-nav="catalogue">
+        <h1>AI Tips</h1>
+      </div>
+      <div class="navlinks">
+        <button class="navlink" data-nav="catalogue"><span class="ico"></span>Tips</button>
+        <button class="navlink" data-nav="board"><span class="ico"></span>Leaderboard</button>
+        <button class="navlink" data-nav="concepts"><span class="ico"></span>How AI works</button>
+      </div>
+      <button class="addtip" data-nav="new-tip">+ Add a tip</button>
+      <div class="side-sec" id="tiplist"></div>
+      <div class="side-foot">
+        <span id="who"></span>
+        <button id="signout" class="linkbtn">Sign out</button>
+      </div>
+    </aside>
+    <main class="main" id="main"></main>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked@12/marked.min.js"></script>
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
