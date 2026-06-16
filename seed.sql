@@ -1,12 +1,12 @@
 -- ============================================================
 --  Seed default groups + tips, authored by Nicholas.
---  Run AFTER nicholas.snogren@sprezz.com has signed in once
+--  Run AFTER nicholas.snogren@sprezzmc.com has signed in once
 --  (so the profile row exists). Safe to re-run.
 -- ============================================================
 do $$
 declare nick uuid;
 begin
-  select id into nick from profiles where email = 'nicholas.snogren@sprezz.com';
+  select id into nick from profiles where email = 'nicholas.snogren@sprezzmc.com';
 
   -- Format & Structure
   insert into groups (id, name, position, author_id) values

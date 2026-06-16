@@ -23,7 +23,7 @@ It works two ways:
    - Domains are seeded in `schema.sql` (`sprezzmc.com`, `va.gov`) — edit there or in the `approved_domains` table.
    - One-off subcontractors → add their email to `approved_emails`.
 5. Settings → API → copy the **Project URL** and **anon public** key into `config.js`.
-6. Have nicholas.snogren@sprezz.com sign in once, then run **`seed.sql`** to load the default tips under his name.
+6. Have nicholas.snogren@sprezzmc.com sign in once, then run **`seed.sql`** to load the default tips under his name.
 
 ## Deploy (GitHub Pages)
 
