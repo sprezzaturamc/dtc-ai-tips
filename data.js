@@ -8,13 +8,21 @@
     d.getFullYear() + '·' + String(d.getMonth()+1).padStart(2,'0') + '·' + String(d.getDate()).padStart(2,'0'); };
   const blurbOf = (body) => { const s = (body||'').split(/(?<=[.!?])\s/)[0] || body || ''; return s.length > 95 ? s.slice(0,92)+'…' : s; };
   const agg = (rs) => { const c = rs.length; return { count: c, avg: c ? rs.reduce((a,r)=>a+r.rating,0)/c : 0 }; };
+  // Normalize examples: prefer the `examples` array; fall back to the legacy single `example` column.
+  const examplesOf = (row) => {
+    const arr = Array.isArray(row.examples) ? row.examples : [];
+    const clean = arr.map(s => String(s ?? '').trim()).filter(Boolean);
+    if (clean.length) return clean;
+    const one = (row.example || '').trim();
+    return one ? [one] : [];
+  };
 
   /* ---------------- DEMO sample data ---------------- */
   const SAMPLE = [
     { id:'g1', name:'Format & Structure', tips:[
       { id:'word-limit', title:'Set a word limit', author:'N. Snogren', authorId:'nick',
         body:'State the length you want before the model gets a chance to ramble. "Three bullets." "Under eighty words." It is the smallest instruction with the largest visible return — the reply lands faster and you read it faster.\n\nA language model continues the pattern your prompt starts, one token at a time. Give it the shape of the ending and you have removed a whole dimension of guesswork.',
-        example:'Summarize this report in 5 bullets, max 80 words.',
+        examples:['Summarize this report in 5 bullets, max 80 words.','Reply in one sentence — under 25 words. No preamble.'],
         ratings:[ {user:'md',name:'M. Delgado',rating:5,comment:'Changed how I draft email. Cap at 60 words, expand only the lines that get pushback.',date:'2026-06-12'},
                   {user:'tk',name:'T. Keller',rating:4,comment:'For analysis I add a floor: "at least 200 words, then a 1-line verdict," or it clips reasoning I wanted.',date:'2026-06-08'} ] },
       { id:'specify-output', title:'Specify the output', author:'N. Snogren', authorId:'nick',
@@ -53,7 +61,21 @@
     configured, mode: configured ? 'live' : 'demo', user: null,
 
     async init(){ if (sb){ const { data } = await sb.auth.getSession(); this.user = data.session?.user || null; } },
-    onAuth(cb){ if (sb) sb.auth.onAuthStateChange((_e, session) => { this.user = session?.user || null; cb(this.user); }); },
+    onAuth(cb){
+      if (!sb) return;
+      // Supabase fires onAuthStateChange on tab focus (TOKEN_REFRESHED) — keep `user` fresh,
+      // but only notify the app when the signed-in identity actually changes, so the current
+      // view (e.g. an open tip) isn't reset to the catalogue every time you switch windows.
+      let lastId = this.user?.id ?? null;
+      sb.auth.onAuthStateChange((_e, session) => {
+        const u = session?.user || null;
+        this.user = u;
+        const id = u?.id ?? null;
+        if (id === lastId) return;
+        lastId = id;
+        cb(u);
+      });
+    },
     async signIn(email){
       if (!sb) throw new Error('demo');
       return sb.auth.signInWithOtp({ email, options:{ emailRedirectTo: location.href.split('#')[0] }});
@@ -84,20 +106,21 @@
       if (!sb){
         const t = demoTips().find(x=>x.id===id); if (!t) return null;
         const rs = demoRatings(t); const a = agg(rs); const mine = rs.find(r=>r.user==='you');
-        return { id:t.id, title:t.title, body:t.body, example:t.example, group:t.group, groupId:t.groupId,
+        return { id:t.id, title:t.title, body:t.body, examples:examplesOf(t), group:t.group, groupId:t.groupId,
           author:t.author, avg:a.avg, count:a.count, you: mine?mine.rating:null, yourComment: mine?mine.comment:'',
-          canEdit: false, comments: rs.filter(r=>r.comment).map(r=>({name:r.name,rating:r.rating,date:r.date,text:r.comment})) };
+          canEdit: false,
+          comments: rs.filter(r=>r.comment).map(r=>({ name:r.name, rating:r.rating, date:r.date, text:r.comment, mine:r.user==='you' })) };
       }
       const yourId = this.user?.id;
-      const { data:t } = await sb.from('tips').select('id,title,body,example,group_id,author_id, groups(name), profiles(display_name)').eq('id',id).single();
+      const { data:t } = await sb.from('tips').select('id,title,body,example,examples,group_id,author_id, groups(name), profiles(display_name)').eq('id',id).single();
       if (!t) return null;
       const { data:rs } = await sb.from('ratings').select('rating,comment,updated_at,user_id, profiles(display_name)').eq('tip_id',id).order('updated_at',{ascending:false});
       const a = agg(rs||[]); const mine = (rs||[]).find(r=>r.user_id===yourId);
-      return { id:t.id, title:t.title, body:t.body, example:t.example, group:t.groups?.name||'', groupId:t.group_id,
+      return { id:t.id, title:t.title, body:t.body, examples:examplesOf(t), group:t.groups?.name||'', groupId:t.group_id,
         author:t.profiles?.display_name||'—', avg:a.avg, count:a.count,
         you: mine?mine.rating:null, yourComment: mine?(mine.comment||''):'',
         canEdit: t.author_id===yourId,
-        comments: (rs||[]).filter(r=>r.comment && r.comment.trim()).map(r=>({ name:r.profiles?.display_name||'—', rating:r.rating, date:fmtDate(r.updated_at), text:r.comment })) };
+        comments: (rs||[]).filter(r=>r.comment && r.comment.trim()).map(r=>({ name:r.profiles?.display_name||'—', rating:r.rating, date:fmtDate(r.updated_at), text:r.comment, mine:r.user_id===yourId })) };
     },
 
     async saveRating(tipId, rating, comment){
@@ -117,10 +140,21 @@
       const { data, error } = await sb.from('groups').insert({ name, author_id:this.user.id }).select('id').single();
       if (error) throw error; return data.id;
     },
-    async createTip({ groupId, title, body, example }){
+    async createTip({ groupId, title, body, examples }){
       if (!sb) throw new Error('demo');
-      const { data, error } = await sb.from('tips').insert({ group_id:groupId, title, body, example, author_id:this.user.id }).select('id').single();
+      const { data, error } = await sb.from('tips').insert({ group_id:groupId, title, body, examples: examples||[], author_id:this.user.id }).select('id').single();
       if (error) throw error; return data.id;
+    },
+    async updateTip({ id, groupId, title, body, examples }){
+      if (!sb) throw new Error('demo');
+      const { error } = await sb.from('tips').update({ group_id:groupId, title, body, examples: examples||[] }).eq('id',id).eq('author_id',this.user.id);
+      if (error) throw error;
+    },
+    // Clear your note while keeping your rating. Demo persists to localStorage like saveRating.
+    async deleteComment(tipId){
+      if (!sb){ const s = demoStore(); if (s[tipId]){ s[tipId].comment = ''; demoSave(s); } return; }
+      const { error } = await sb.from('ratings').update({ comment:null, updated_at:new Date().toISOString() }).eq('tip_id',tipId).eq('user_id',this.user.id);
+      if (error) throw error;
     },
 
     async leaderboard(){

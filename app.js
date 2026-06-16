@@ -53,7 +53,7 @@
     if (v === 'catalogue') renderCatalogue();
     else if (v === 'board') renderBoard();
     else if (v === 'concepts') renderConcepts();
-    else if (v === 'new-tip') renderNewTip();
+    else if (v === 'new-tip') renderTipForm();
     renderSidebar();
     main().scrollIntoView({ block:'start' });
   }
@@ -111,10 +111,11 @@
         <span class="rating"><span class="stars">${stars(t.avg)}</span> <b>${t.avg.toFixed(1)}</b> avg · ${t.count} ratings</span>
         <span class="dot">·</span><span>${yourLine}</span>
         <span class="dot">·</span><span>added by ${esc(t.author)}</span>
+        ${t.canEdit ? '<span class="dot">·</span><span class="edit" id="editTip">edit tip</span>' : ''}
       </div>
       <div class="tip-card"><div class="tip-body">
         ${t.body.split(/\n\n+/).map(p=>`<p>${esc(p)}</p>`).join('')}
-        ${t.example ? `<div class="example">${esc(t.example)}</div>` : ''}
+        ${t.examples.map((ex,i)=>`<div class="example"><button class="copy" data-copy="${i}" title="Copy prompt" aria-label="Copy prompt">⧉</button><span class="ex-text">${esc(ex)}</span></div>`).join('')}
       </div></div>
       <div class="mark">
         <div class="mark-hd"><span class="t">Mark this tip worked</span></div>
@@ -132,11 +133,29 @@
       <div class="statements">
         <h4>Notes <span class="n">${t.comments.length}</span></h4>
         ${t.comments.length ? t.comments.map(c=>`
-          <div class="stmt"><div class="top"><span class="name">${esc(c.name)} <span class="stars">${stars(c.rating)}</span></span><span class="date">${esc(c.date)}</span></div><p>${esc(c.text)}</p></div>`).join('')
+          <div class="stmt"><div class="top"><span class="name">${esc(c.name)} <span class="stars">${stars(c.rating)}</span></span>
+            <span class="date">${esc(c.date)}${c.mine?` · <button class="linkbtn cmt-edit">edit</button> · <button class="linkbtn cmt-del">delete</button>`:''}</span></div>
+            <p>${esc(c.text)}</p></div>`).join('')
           : '<div class="empty">No notes yet — be the first to mark this tip worked.</div>'}
       </div>`;
     main().querySelector('.eyebrow').addEventListener('click', () => go('catalogue'));
+    if (t.canEdit) main().querySelector('#editTip').addEventListener('click', () => editTip(t.id));
+    main().querySelectorAll('[data-copy]').forEach(b => b.addEventListener('click', () => copyText(t.examples[+b.dataset.copy], b)));
+    main().querySelectorAll('.cmt-edit').forEach(b => b.addEventListener('click', () => {
+      const n = $('#note'); n.scrollIntoView({ block:'center' }); n.focus();
+    }));
+    main().querySelectorAll('.cmt-del').forEach(b => b.addEventListener('click', async () => {
+      if (!confirm('Delete your note? Your rating will stay.')) return;
+      try { await DB.deleteComment(t.id); cat = await DB.catalogue(); openTip(t.id); }
+      catch { const m = $('#markmsg'); if (m) m.textContent = 'Could not delete the note.'; }
+    }));
     bindRate(t.id);
+  }
+
+  async function copyText(text, btn){
+    try { await navigator.clipboard.writeText(text); }
+    catch { const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch {} ta.remove(); }
+    if (btn){ const prev = btn.textContent; btn.textContent = '✓'; btn.classList.add('ok'); setTimeout(()=>{ btn.textContent = prev; btn.classList.remove('ok'); }, 1100); }
   }
 
   function bindRate(tipId){
@@ -165,38 +184,67 @@
     $('#learnBtn').addEventListener('click', () => save(true));
   }
 
-  /* ---------------- new tip ---------------- */
-  async function renderNewTip(){
+  /* ---------------- add / edit tip ---------------- */
+  const exampleRow = (val) => `<div class="ex-row">
+      <textarea class="f-example" placeholder="A prompt someone can paste.">${esc(val||'')}</textarea>
+      <button type="button" class="btn ghost ex-rm" title="Remove example" aria-label="Remove example">✕</button>
+    </div>`;
+
+  // Load a tip, then open the form pre-filled for editing.
+  async function editTip(id){
+    view = 'edit-tip';
+    document.querySelectorAll('.navlink').forEach(n => n.classList.toggle('active', n.dataset.nav==='catalogue'));
+    main().innerHTML = '<div class="loading">Loading…</div>';
+    const t = await DB.tip(id);
+    if (!t){ main().innerHTML = '<p>Tip not found.</p>'; return; }
+    renderTipForm(t);
+  }
+
+  // existing == null → create; existing == tip object → edit
+  async function renderTipForm(existing){
     const groups = await DB.groups();
     const demo = DB.mode === 'demo';
+    const editing = !!existing;
+    const exs = editing && existing.examples?.length ? existing.examples : [''];
     main().innerHTML = `
-      <div class="eyebrow" data-nav="catalogue">← Tips</div>
-      <h2 class="form-title">Add a tip</h2>
-      ${demo ? '<p class="cat-intro">Demo mode is read-only — connect Supabase to save new tips.</p>' : ''}
+      <div class="eyebrow" data-nav="back">← ${editing ? esc(existing.title) : 'Tips'}</div>
+      <h2 class="form-title">${editing ? 'Edit tip' : 'Add a tip'}</h2>
+      ${demo ? `<p class="cat-intro">Demo mode is read-only — connect Supabase to save ${editing?'changes':'new tips'}.</p>` : ''}
       <div class="field"><label>Group</label>
-        <select id="f-group">${groups.map(g=>`<option value="${g.id}">${esc(g.name)}</option>`).join('')}
+        <select id="f-group">${groups.map(g=>`<option value="${g.id}" ${editing && g.id===existing.groupId?'selected':''}>${esc(g.name)}</option>`).join('')}
           <option value="__new">➕ New group…</option></select></div>
       <div class="field" id="newgroup-wrap" hidden><label>New group name</label><input id="f-newgroup" placeholder="e.g. Reasoning"></div>
-      <div class="field"><label>Title</label><input id="f-title" placeholder="Set a word limit"></div>
-      <div class="field"><label>What to do & why</label><textarea id="f-body" style="min-height:140px" placeholder="One or two short paragraphs."></textarea>
+      <div class="field"><label>Title</label><input id="f-title" value="${esc(editing?existing.title:'')}" placeholder="Set a word limit"></div>
+      <div class="field"><label>What to do & why</label><textarea id="f-body" style="min-height:140px" placeholder="One or two short paragraphs.">${esc(editing?existing.body:'')}</textarea>
         <div class="hint">Blank line between paragraphs.</div></div>
-      <div class="field"><label>Example prompt</label><textarea id="f-example" style="min-height:70px" placeholder="A prompt someone can paste."></textarea></div>
+      <div class="field"><label>Example prompts</label>
+        <div id="examples">${exs.map(exampleRow).join('')}</div>
+        <button type="button" class="btn ghost" id="addEx" style="margin-top:8px">+ Add another example</button></div>
       <div class="form-actions">
-        <button class="btn ghost" data-nav="catalogue">Cancel</button>
-        <button class="btn primary" id="createBtn" ${demo?'disabled style="opacity:.5;cursor:not-allowed"':''}>Create tip</button>
+        <button class="btn ghost" data-nav="back">Cancel</button>
+        <button class="btn primary" id="saveTipBtn" ${demo?'disabled style="opacity:.5;cursor:not-allowed"':''}>${editing?'Save changes':'Create tip'}</button>
       </div>
       <p class="login-msg" id="formmsg"></p>`;
-    main().querySelectorAll('[data-nav="catalogue"]').forEach(b => b.addEventListener('click', () => go('catalogue')));
+    const back = () => editing ? openTip(existing.id) : go('catalogue');
+    main().querySelectorAll('[data-nav="back"]').forEach(b => b.addEventListener('click', back));
     const sel = $('#f-group');
     const syncNewGroup = () => { $('#newgroup-wrap').hidden = sel.value !== '__new'; };
     sel.addEventListener('change', syncNewGroup);
     syncNewGroup();   // show the name input immediately when "New group…" is the default (e.g. no groups yet)
-    if (!demo) $('#createBtn').addEventListener('click', createTip);
+    const exWrap = $('#examples');
+    const bindRm = () => exWrap.querySelectorAll('.ex-rm').forEach(b => b.onclick = () => {
+      if (exWrap.querySelectorAll('.ex-row').length > 1) b.closest('.ex-row').remove();
+      else b.closest('.ex-row').querySelector('.f-example').value = '';   // keep at least one row
+    });
+    bindRm();
+    $('#addEx').addEventListener('click', () => { exWrap.insertAdjacentHTML('beforeend', exampleRow('')); bindRm(); });
+    if (!demo) $('#saveTipBtn').addEventListener('click', () => submitTip(existing));
   }
 
-  async function createTip(){
+  async function submitTip(existing){
     const msg = $('#formmsg'); msg.className = 'login-msg';
-    const title = $('#f-title').value.trim(), body = $('#f-body').value.trim(), example = $('#f-example').value.trim();
+    const title = $('#f-title').value.trim(), body = $('#f-body').value.trim();
+    const examples = [...document.querySelectorAll('#examples .f-example')].map(t => t.value.trim()).filter(Boolean);
     if (!title || !body){ msg.textContent = 'Title and body are required.'; msg.classList.add('err'); return; }
     try {
       let groupId = $('#f-group').value;
@@ -205,10 +253,12 @@
         if (!name){ msg.textContent = 'Name the new group.'; msg.classList.add('err'); return; }
         groupId = await DB.createGroup(name);
       }
-      const id = await DB.createTip({ groupId, title, body, example });
+      let id;
+      if (existing){ await DB.updateTip({ id:existing.id, groupId, title, body, examples }); id = existing.id; }
+      else { id = await DB.createTip({ groupId, title, body, examples }); }
       cat = await DB.catalogue();
       openTip(id);
-    } catch { msg.textContent = 'Could not create the tip — check your access.'; msg.classList.add('err'); }
+    } catch { msg.textContent = `Could not ${existing?'save':'create'} the tip — check your access.`; msg.classList.add('err'); }
   }
 
   /* ---------------- leaderboard ---------------- */

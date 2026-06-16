@@ -100,7 +100,12 @@ input,textarea,button{font-family:inherit}
 .tip-card{background:var(--panel);border:1px solid var(--line-strong);border-radius:10px;padding:24px 26px;margin-bottom:30px}
 .tip-body p{margin-bottom:16px;font-size:16.5px;line-height:1.75;color:var(--ink)}
 .tip-body p:first-child{margin-top:0}
-.example{background:var(--side);border:1px solid var(--line);border-radius:8px;padding:16px 18px;margin:22px 0 0;font-family:'IBM Plex Mono',monospace;font-size:14px;color:var(--ink-soft);line-height:1.6}
+.example{position:relative;background:var(--side);border:1px solid var(--line);border-radius:8px;padding:16px 18px;margin:14px 0 0;font-family:'IBM Plex Mono',monospace;font-size:14px;color:var(--ink-soft);line-height:1.6}
+.example:first-of-type{margin-top:22px}
+.example .ex-text{display:block;white-space:pre-wrap;padding-right:28px}
+.example .copy{position:absolute;top:10px;right:10px;border:none;background:none;cursor:pointer;font-size:15px;line-height:1;color:var(--ink-faint);padding:4px 5px;border-radius:5px;transition:color .14s,background .14s}
+.example .copy:hover{color:var(--accent);background:rgba(0,0,0,.05)}
+.example .copy.ok{color:#3f7a4f}
 
 /* mark worked */
 .mark{border:1px solid var(--line-strong);border-radius:10px;background:var(--panel)}
@@ -138,6 +143,9 @@ textarea::placeholder{color:var(--ink-faint)}
 .field input,.field select,.field textarea{width:100%;border:1px solid var(--line-strong);background:var(--panel);border-radius:8px;padding:11px 12px;font-size:14.5px;color:var(--ink)}
 .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--accent)}
 .field .hint{font-size:12px;color:var(--ink-faint);margin-top:5px}
+.ex-row{display:flex;gap:8px;align-items:stretch;margin-bottom:8px}
+.ex-row textarea{flex:1;width:auto;min-height:60px}
+.ex-row .ex-rm{flex-shrink:0;padding:0 14px;font-size:13px}
 .form-actions{display:flex;gap:10px;margin-top:8px}
 
 /* ---- leaderboard ---- */

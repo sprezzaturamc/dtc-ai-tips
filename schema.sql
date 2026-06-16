@@ -58,10 +58,14 @@ create table if not exists tips (
   group_id    uuid references groups(id) on delete cascade,
   title       text not null,
   body        text not null,
-  example     text,
+  example     text,                                       -- legacy single example (kept for old rows)
+  examples    jsonb not null default '[]'::jsonb,         -- one or more example prompts
   author_id   uuid references profiles(id),
   created_at  timestamptz not null default now()
 );
+
+-- add the multi-example column to databases created before it existed
+alter table tips add column if not exists examples jsonb not null default '[]'::jsonb;
 
 create table if not exists ratings (
   id          uuid primary key default gen_random_uuid(),
