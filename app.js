@@ -143,7 +143,7 @@
         ${t.canEdit ? '<span class="dot">·</span><span class="edit" id="editTip">edit tip</span>' : ''}
       </div>
       <div class="tip-card"><div class="tip-body">
-        ${t.body.split(/\n\n+/).map(p=>`<p>${esc(p)}</p>`).join('')}
+        ${DOMPurify.sanitize(marked.parse(t.body))}
         ${t.examples.map((ex,i)=>`<div class="example"><button class="copy" data-copy="${i}" title="Copy prompt" aria-label="Copy prompt">⧉</button><span class="ex-text">${esc(ex)}</span></div>`).join('')}
       </div></div>
       <div class="mark">
