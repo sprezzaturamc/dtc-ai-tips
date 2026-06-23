@@ -123,9 +123,11 @@
     const unseen = subs.filter(s => s.unseen).length;
     const inboxActive = FB_VIEWS.includes(view);
     const inboxLabel = DB.isAdmin ? 'Inbox' : 'My messages';
-    let h = `<div class="lbl">Reach the program</div>`;
+    // The three intake buttons reuse the "Add a tip" styling, so the sidebar
+    // shows four matching action buttons in a row.
+    let h = '';
     for (const [type, m] of Object.entries(FB_TYPES))
-      h += `<button class="fblink" data-fb="${type}">${esc(m.btn)}</button>`;
+      h += `<button class="addtip" data-fb="${type}">${esc(m.btn)}</button>`;
     h += `<button class="navlink fbinbox ${inboxActive?'active':''}" data-nav="feedback-list">
             <span class="ico"></span>${inboxLabel}
             ${unseen ? `<span class="fbbadge" title="${unseen} thread${unseen>1?'s':''} with new replies">${unseen}</span>` : ''}

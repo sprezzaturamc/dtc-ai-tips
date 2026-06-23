@@ -194,11 +194,9 @@ textarea::placeholder{color:var(--ink-faint)}
 .concepts a{color:var(--accent)}
 
 /* ---- feedback: sidebar ---- */
-.side-feedback{padding:6px 14px 4px;border-bottom:1px solid var(--line);margin-bottom:8px}
-.side-feedback .lbl{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);padding:6px 10px 6px;margin-top:4px}
-.fblink{display:block;width:100%;text-align:left;cursor:pointer;background:none;border:none;font-size:13px;color:var(--ink-soft);padding:7px 10px;border-radius:7px;transition:.15s}
-.fblink:hover{background:rgba(0,0,0,.04);color:var(--accent)}
-.fbinbox{margin-top:2px;position:relative}
+/* the three intake buttons reuse .addtip; this section just adds the inbox link */
+.side-feedback{padding-bottom:8px;border-bottom:1px solid var(--line);margin-bottom:8px}
+.side-feedback .fbinbox{margin:2px 14px 0;width:calc(100% - 28px);position:relative}
 .fbbadge{margin-left:auto;background:var(--accent);color:#fff;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;min-width:18px;height:18px;border-radius:9px;padding:0 5px;display:inline-flex;align-items:center;justify-content:center}
 
 /* ---- feedback: list ---- */
