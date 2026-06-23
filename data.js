@@ -234,7 +234,7 @@
       }
       const me = this.user?.id;
       const [{ data:subs }, { data:msgs }, { data:reads }] = await Promise.all([
-        sb.from('submissions').select('id,type,subject,status,author_id,created_at,updated_at, profiles(display_name)'),
+        sb.from('submissions').select('id,type,subject,status,author_id,created_at,updated_at, profiles!author_id(display_name)'),
         sb.from('submission_messages').select('submission_id,author_id,created_at'),
         sb.from('submission_reads').select('submission_id,last_read_at').eq('user_id', me)
       ]);
@@ -258,7 +258,7 @@
             isAdmin:m.author==='admin', body:m.body, date:fmtDate(m.at) })) };
       }
       const me = this.user?.id;
-      const { data:s } = await sb.from('submissions').select('id,type,subject,status,author_id, profiles(display_name)').eq('id',id).single();
+      const { data:s } = await sb.from('submissions').select('id,type,subject,status,author_id, profiles!author_id(display_name)').eq('id',id).single();
       if (!s) return null;
       const { data:msgs } = await sb.from('submission_messages')
         .select('body,created_at,author_id, profiles(display_name,is_admin)').eq('submission_id',id).order('created_at');
