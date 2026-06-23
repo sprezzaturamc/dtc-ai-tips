@@ -34,13 +34,41 @@
 
   /* ---------------- chrome ---------------- */
   function bindChrome(){
+    let authMode = 'signin';
+    const submitBtn = $('#auth-submit'), toggleText = $('#toggle-text'), toggleBtn = $('#toggle-mode');
+    const renderAuthMode = () => {
+      const signin = authMode === 'signin';
+      submitBtn.textContent = signin ? 'Sign in' : 'Create account';
+      toggleText.textContent = signin ? 'Need an account?' : 'Already have an account?';
+      toggleBtn.textContent = signin ? 'Create one' : 'Sign in';
+      $('#password').setAttribute('autocomplete', signin ? 'current-password' : 'new-password');
+    };
+    toggleBtn.addEventListener('click', () => {
+      authMode = authMode === 'signin' ? 'signup' : 'signin';
+      const msg = $('#login-msg'); msg.textContent = ''; msg.className = 'login-msg';
+      renderAuthMode();
+    });
+    renderAuthMode();
+
+    // Client-side throttle: 3 failed attempts within a minute locks the form,
+    // to slow anyone guessing the approved domain. The DB trigger is the real gate.
+    const fails = [];
+    const throttled = () => { const now = Date.now(); while (fails.length && now - fails[0] > 60000) fails.shift(); return fails.length >= 3; };
+
     $('#login-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const email = $('#email').value.trim();
       const password = $('#password').value;
       const msg = $('#login-msg'); msg.className = 'login-msg';
-      try { await DB.signIn(email, password); }
-      catch { msg.textContent = 'Incorrect email or password.'; msg.classList.add('err'); }
+      if (throttled()){ msg.textContent = 'Too many attempts. Wait a minute and try again.'; msg.classList.add('err'); return; }
+      try {
+        if (authMode === 'signin') await DB.signIn(email, password);
+        else await DB.signUp(email, password);
+      } catch {
+        fails.push(Date.now());
+        msg.textContent = authMode === 'signin' ? 'Incorrect email or password.' : 'Could not create an account with those details.';
+        msg.classList.add('err');
+      }
     });
     $('#signout').addEventListener('click', async () => { await DB.signOut(); location.reload(); });
     document.querySelectorAll('[data-nav]').forEach(el =>

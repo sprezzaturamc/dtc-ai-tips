@@ -27,6 +27,8 @@ input,textarea,button{font-family:inherit}
 .login-msg{margin-top:14px;font-size:13.5px;color:var(--ink-soft);min-height:18px}
 .login-msg.ok{color:#3f7a4f}
 .login-msg.err{color:var(--accent)}
+.login-toggle{margin-top:14px;font-size:13px;color:var(--ink-soft)}
+.login-toggle .linkbtn{font-size:13px}
 
 /* ---- buttons ---- */
 .btn{font-size:13px;font-weight:600;cursor:pointer;border-radius:8px;padding:11px 18px;transition:.16s;border:1px solid transparent}

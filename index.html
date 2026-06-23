@@ -16,13 +16,14 @@
   <div id="login" class="login" hidden>
     <div class="login-card">
       <h1>AI Tips</h1>
-      <p class="login-sub">A private library of prompting techniques for the DTC program. Sign in with your work email and password.</p>
+      <p class="login-sub">A private library of prompting techniques for the DTC program. Sign in with your work email and password, or create an account.</p>
       <form id="login-form">
         <input id="email" type="email" placeholder="you@sprezzmc.com" required autocomplete="email">
         <input id="password" type="password" placeholder="Password" required autocomplete="current-password">
-        <button class="btn primary" type="submit">Sign in</button>
+        <button class="btn primary" type="submit" id="auth-submit">Sign in</button>
       </form>
       <p id="login-msg" class="login-msg"></p>
+      <p class="login-toggle"><span id="toggle-text">Need an account?</span> <button type="button" id="toggle-mode" class="linkbtn">Create one</button></p>
     </div>
   </div>
 

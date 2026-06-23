@@ -12,10 +12,18 @@ create table if not exists profiles (
   created_at    timestamptz not null default now()
 );
 
--- auto-create a profile when a user signs up
+-- auto-create a profile when a user signs up.
+-- Also the signup gate: reject any email whose domain isn't approved. Raising
+-- here rolls back the auth.users insert, so the account is never created. The
+-- client only sees a generic "Database error saving new user" — it never
+-- learns which domains are allowed.
 create or replace function handle_new_user()
 returns trigger language plpgsql security definer set search_path = public as $$
 begin
+  if split_part(new.email, '@', 2) not in (select domain from approved_domains)
+     and new.email not in (select email from approved_emails) then
+    raise exception 'signup not permitted';
+  end if;
   insert into profiles (id, email, display_name)
   values (new.id, new.email, split_part(new.email, '@', 1))
   on conflict (id) do nothing;

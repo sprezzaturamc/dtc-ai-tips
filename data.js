@@ -81,6 +81,13 @@
       const { error } = await sb.auth.signInWithPassword({ email, password });
       if (error) throw error;
     },
+    // Self-service signup. The DB trigger rejects unapproved domains, so an
+    // off-domain email throws here — surfaced to the user as a generic error.
+    async signUp(email, password){
+      if (!sb) throw new Error('demo');
+      const { error } = await sb.auth.signUp({ email, password });
+      if (error) throw error;
+    },
     async signOut(){ if (sb) await sb.auth.signOut(); this.user = null; },
 
     async catalogue(){
