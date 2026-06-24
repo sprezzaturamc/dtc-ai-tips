@@ -184,7 +184,7 @@
         ${t.examples.map((ex,i)=>`<div class="example"><button class="copy" data-copy="${i}" title="Copy prompt" aria-label="Copy prompt">⧉</button><span class="ex-text">${esc(ex)}</span></div>`).join('')}
       </div></div>
       <div class="mark">
-        <div class="mark-hd"><span class="t">Mark this tip learned</span></div>
+        <div class="mark-hd"><span class="t">${t.you ? 'Your rating' : 'Mark this tip learned'}</span></div>
         <div class="mark-bd">
           <div class="rrow"><label>Your rating</label>
             <div class="rate" id="rate" data-set="${t.you||0}">
@@ -192,7 +192,9 @@
             </div></div>
           <textarea id="note" placeholder="Did this tip hold up for you? (visible below)">${esc(t.yourComment||'')}</textarea>
           <div class="mark-actions"><span class="note" id="markmsg">you can edit this anytime</span>
-            <div class="btns"><button class="btn ghost" id="saveBtn">Save</button><button class="btn primary" id="learnBtn">Mark learned</button></div>
+            <div class="btns">${t.you
+              ? '<button class="btn ghost" id="delBtn">Delete your rating</button><button class="btn primary" id="learnBtn">Update</button>'
+              : '<button class="btn primary" id="learnBtn">Mark learned</button>'}</div>
           </div>
         </div>
       </div>
@@ -200,7 +202,7 @@
         <h4>Notes <span class="n">${t.comments.length}</span></h4>
         ${t.comments.length ? t.comments.map(c=>`
           <div class="stmt"><div class="top"><span class="name">${esc(c.name)} <span class="stars">${stars(c.rating)}</span></span>
-            <span class="date">${esc(c.date)}${c.mine?` · <button class="linkbtn cmt-edit">edit</button> · <button class="linkbtn cmt-del">delete</button>`:''}</span></div>
+            <span class="date">${esc(c.date)}${c.mine?` · <button class="linkbtn cmt-edit">edit</button>`:''}</span></div>
             <p>${esc(c.text)}</p></div>`).join('')
           : '<div class="empty">No notes yet — be the first to mark this tip learned.</div>'}
       </div>`;
@@ -209,11 +211,6 @@
     main().querySelectorAll('[data-copy]').forEach(b => b.addEventListener('click', () => copyText(t.examples[+b.dataset.copy], b)));
     main().querySelectorAll('.cmt-edit').forEach(b => b.addEventListener('click', () => {
       const n = $('#note'); n.scrollIntoView({ block:'center' }); n.focus();
-    }));
-    main().querySelectorAll('.cmt-del').forEach(b => b.addEventListener('click', async () => {
-      if (!confirm('Delete your note? Your rating will stay.')) return;
-      try { await DB.deleteComment(t.id); cat = await DB.catalogue(); openTip(t.id); }
-      catch { const m = $('#markmsg'); if (m) m.textContent = 'Could not delete the note.'; }
     }));
     bindRate(t.id);
   }
@@ -246,8 +243,18 @@
         await openTip(tipId);
       } catch { msg.textContent = 'Could not save — check your connection / access.'; }
     };
-    $('#saveBtn').addEventListener('click', () => save(false));
     $('#learnBtn').addEventListener('click', () => save(true));
+
+    const delBtn = $('#delBtn');
+    if (delBtn) delBtn.addEventListener('click', async () => {
+      if (!confirm('Delete your rating and note?')) return;
+      const msg = $('#markmsg');
+      try {
+        await DB.deleteRating(tipId);
+        cat = await DB.catalogue();          // refresh averages
+        await openTip(tipId);                // re-renders stars, textarea, notes, counts
+      } catch { msg.textContent = 'Could not delete — check your connection / access.'; }
+    });
   }
 
   /* ---------------- add / edit tip ---------------- */

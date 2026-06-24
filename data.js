@@ -179,10 +179,10 @@
       const { error } = await sb.from('tips').update({ group_id:groupId, title, body, examples: examples||[] }).eq('id',id).eq('author_id',this.user.id);
       if (error) throw error;
     },
-    // Clear your note while keeping your rating. Demo persists to localStorage like saveRating.
-    async deleteComment(tipId){
-      if (!sb){ const s = demoStore(); if (s[tipId]){ s[tipId].comment = ''; demoSave(s); } return; }
-      const { error } = await sb.from('ratings').update({ comment:null, updated_at:new Date().toISOString() }).eq('tip_id',tipId).eq('user_id',this.user.id);
+    // Delete your rating and its note together (removes the whole row). Demo persists to localStorage like saveRating.
+    async deleteRating(tipId){
+      if (!sb){ const s = demoStore(); delete s[tipId]; demoSave(s); return; }
+      const { error } = await sb.from('ratings').delete().eq('tip_id',tipId).eq('user_id',this.user.id);
       if (error) throw error;
     },
 
