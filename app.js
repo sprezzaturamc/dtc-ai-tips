@@ -15,7 +15,7 @@
   const FB_TYPES = {
     idea:      { btn:'Request a prompt', label:'Prompt request', lead:'Describe a prompt you wish you had — the task, who it’s for, what good output looks like.' },
     advice:    { btn:'Ask for advice',   label:'Advice',         lead:'Ask the program directly. What are you trying to do, and where are you stuck?' },
-    complaint: { btn:'Vent frustration', label:'Frustration',    lead:'Tell us what isn’t working. Blunt is fine — it’s a private thread to the program.' },
+    complaint: { btn:'Share AI frustration', label:'AI frustration', lead:'Tell me what the AI did that annoyed you and I\'d be happy to reach out and help get better results.' },
   };
   const FB_STATUS = { open:'Open', in_progress:'In progress', resolved:'Resolved' };
   const FB_VIEWS = ['feedback-list','feedback-new','feedback-thread'];

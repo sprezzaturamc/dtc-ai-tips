@@ -8,7 +8,7 @@ A private intake channel for members to reach the program directly. Three sideba
 |---|---|
 | Request a prompt | `idea` |
 | Ask for advice | `advice` |
-| Vent frustration | `complaint` |
+| Share AI frustration | `complaint` |
 
 The categories inspire the user; all three route to the same form. The type is kept as metadata for admin triage.
 
